@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neighborhood Explorer</title>
+    <!-- Load Google Fonts: Inter and Nunito as requested in brief -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind for layout utilities only. Custom theming applied via CSS variables below. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Nunito', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- DESIGN BRIEF IMPLEMENTATION --- */
+        :root {
+            /* Colors (HEX from brief) */
+            --primary-300: #F9C97A;
+            --primary-500: #F4A329;
+            --primary-700: #B45309;
+            --secondary-300: #7EDAD6;
+            --secondary-500: #2BB6B4;
+            --secondary-700: #0F766E;
+            --accent-300: #F49DB8;
+            --accent-500: #E8467B;
+            --accent-700: #A61E4D;
+            --bg: #FFF7F2;
+            --surface: #FFFFFF;
+            --surface-alt: #F5F7FA;
+            --border: #E6E9EF;
+            --text: #1F2937;
+            --text-2: #4B5563;
+            --text-muted: #6B7280;
+            --text-inverse: #FFFFFF;
+            --success: #2F9E44;
+            --warning: #F59F00;
+            --error: #D92D20;
+            --info: #2563EB;
+
+            /* Spacing & Radius */
+            --radius-card: 16px;
+            --radius-pill: 9999px;
+            --shadow-card: 0 4px 14px rgba(17, 24, 39, 0.08);
+            --transition: 180ms ease;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', 'Nunito', sans-serif;
+        }
+
+        /* Component Classes based on brief */
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            transition: all var(--transition);
+        }
+        .card:hover {
+             box-shadow: 0 6px 20px rgba(17, 24, 39, 0.12);
+        }
+
+        .btn {
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-pill);
+            transition: all var(--transition);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:focus-visible {
+            outline: 3px solid var(--secondary-300);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-700);
+            color: var(--text-inverse);
+            border: none;
+        }
+        .btn-primary:hover {
+            filter: brightness(95%); /* from brief */
+            transform: translateY(-1px);
+        }
+        .btn-primary:active { transform: translateY(0px); }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-700);
+            border: 2px solid var(--primary-300);
+        }
+        .btn-secondary:hover {
+            background-color: rgba(249, 201, 122, 0.24); /* --primary-300 at 24% */
+        }
+
+        .btn-accent {
+            background-color: var(--accent-500);
+            color: white;
+        }
+        .btn-accent:hover { filter: brightness(95%); }
+
+        .btn-success { background-color: var(--secondary-500); color: white; }
+        .btn-success:hover { filter: brightness(95%); }
+
+        .btn-error { background-color: var(--accent-700); color: white; }
+        .btn-error:hover { filter: brightness(95%); }
+
+        .input-field {
+            border: 2px solid var(--border);
+            border-radius: 12px; /* Slightly less than card */
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+            width: 100%;
+            background: var(--surface);
+            color: var(--text);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--secondary-500);
+            box-shadow: 0 0 0 3px var(--secondary-300); /* visual focus ring */
+        }
+
+        /* Tabs */
+        .tab-btn {
+            color: var(--text-2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-pill);
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .tab-btn.active {
+            background-color: var(--primary-300);
+            color: var(--primary-700);
+        }
+        .tab-btn:hover:not(.active) {
+            background-color: var(--border);
+        }
+
+        /* Game Specific UI */
+        .timer-bar {
+            height: 8px;
+            background-color: var(--border);
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+        }
+        .timer-fill {
+            height: 100%;
+            background-color: var(--secondary-500);
+            transition: width 1s linear;
+        }
+        .timer-fill.warning { background-color: var(--warning); }
+        .timer-fill.danger { background-color: var(--error); }
+
+        .heart { color: var(--accent-500); }
+        .heart.lost { color: var(--border); }
+
+        /* Utility to hide sections */
+        .hidden-section { display: none !important; }
+
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Builder Canvas */
+        #live-draft-canvas {
+            max-height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-300) var(--surface-alt);
+        }
+        /* Custom scrollbar for Webkit */
+        #live-draft-canvas::-webkit-scrollbar { width: 8px; }
+        #live-draft-canvas::-webkit-scrollbar-track { background: var(--surface-alt); border-radius: 10px; }
+        #live-draft-canvas::-webkit-scrollbar-thumb { background-color: var(--primary-300); border-radius: 10px; border: 2px solid var(--surface-alt); }
+
+        /* Flip Card Styles */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+            cursor: pointer;
+            height: 120px; /* Fixed height to prevent layout jumps */
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            padding: 1rem;
+        }
+        .flip-card-front {
+            background-color: white;
+            border: 2px solid var(--primary-300);
+            color: var(--primary-700);
+        }
+        .flip-card-back {
+            background-color: var(--primary-300);
+            color: var(--primary-700);
+            transform: rotateY(180deg);
+            border: 2px solid var(--primary-300);
+        }
+
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <!-- Main Container -->
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Header & Navigation -->
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-2xl md:text-3xl font-bold" style="color: var(--primary-700)">Neighborhood Explorer</h1>
+            <nav class="flex bg-white p-1 rounded-full shadow-sm border border-[var(--border)]">
+                <button onclick="switchTab('home')" id="tab-home" class="tab-btn active">Home</button>
+                <button onclick="switchTab('game')" id="tab-game" class="tab-btn">Quiz Game</button>
+                <button onclick="switchTab('builder')" id="tab-builder" class="tab-btn">Sentence Builder</button>
+            </nav>
+        </header>
+
+        <!-- SECTIONS -->
+        <main class="card p-6 md:p-10 min-h-[400px]">
+
+            <!-- SECTION 1: HOME / LANDING -->
+            <section id="section-home" class="fade-in flex flex-col items-center justify-center text-center h-full space-y-8 py-8">
+                <div class="w-32 h-32 bg-[var(--primary-300)] rounded-full flex items-center justify-center mb-4">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-[var(--primary-700)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                </div>
+                <h2 class="text-2xl font-bold" style="color:var(--text)">Welcome!</h2>
+                <p class="text-lg max-w-lg mx-auto" style="color:var(--text-2)">
+                    In this game, you will read sentences about someone's home and the area where they live.
+                    You have to decide if what they say is <strong>positive</strong> or <strong>negative</strong>.
+                </p>
+                <p class="text-md max-w-md mx-auto bg-[var(--accent-300)] bg-opacity-20 p-4 rounded-[16px]" style="color:var(--accent-700)">
+                    ⚠️ Be careful, there's a timer, so you need to be quick! Good luck :)
+                </p>
+                <div class="flex gap-4 mt-8">
+                     <button onclick="switchTab('game')" class="btn btn-primary text-lg px-8 py-3">
+                        Start Game
+                     </button>
+                     <button onclick="switchTab('builder')" class="btn btn-secondary text-lg px-8 py-3">
+                        Write Text
+                     </button>
+                </div>
+            </section>
+
+            <!-- SECTION 2: QUIZ GAME -->
+            <section id="section-game" class="hidden-section fade-in">
+                <!-- Game Info Bar -->
+                <div class="flex justify-between items-center mb-6 bg-[var(--surface-alt)] p-4 rounded-[16px]">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[var(--text-muted)] font-semibold">Lives:</span>
+                        <div id="lives-display" class="flex text-2xl">
+                            <!-- Hearts injected by JS -->
+                        </div>
+                    </div>
+                    <div class="text-xl font-bold" style="color:var(--primary-700)">
+                        Score: <span id="score-display">0</span>
+                    </div>
+                </div>
+
+                <!-- Timer -->
+                <div class="mb-8">
+                    <div class="flex justify-between text-sm font-semibold mb-2" style="color:var(--text-muted)">
+                        <span>Time Left</span>
+                        <span id="timer-text">30s</span>
+                    </div>
+                    <div class="timer-bar">
+                        <div id="timer-fill" class="timer-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="flex flex-col items-center justify-center space-y-8 py-8">
+                    <div id="question-card" class="text-center text-xl md:text-3xl font-medium p-8 w-full min-h-[150px] flex items-center justify-center transition-all" style="color:var(--text)">
+                        <!-- Question inserted here -->
+                        Loading...
+                    </div>
+
+                    <!-- Answer Buttons -->
+                    <div class="flex w-full max-w-md gap-6" id="game-buttons">
+                        <button onclick="handleAnswer('neg')" class="btn btn-error flex-1 py-6 text-xl shadow-md hover:shadow-lg transition-all">
+                            👎 Negative
+                        </button>
+                        <button onclick="handleAnswer('pos')" class="btn btn-success flex-1 py-6 text-xl shadow-md hover:shadow-lg transition-all">
+                            👍 Positive
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+             <!-- Game Over Modal (Inline) -->
+             <div id="game-over-modal" class="hidden-section fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div class="card max-w-md w-full p-8 text-center space-y-6 animate-bounce-in">
+                    <div id="game-over-icon" class="text-6xl">😢</div>
+                    <h2 class="text-3xl font-bold" style="color:var(--primary-700)">Game Over!</h2>
+                    <p class="text-xl" style="color:var(--text-2)">Final Score: <span id="final-score" class="font-bold">0</span></p>
+                    <p id="game-over-reason" class="text-[var(--text-muted)] hidden"></p> <!-- Reason hidden by default now -->
+                    <p class="text-lg font-semibold" style="color:var(--accent-500)">Don't give up! You can do it! Try again!</p>
+                    <button onclick="resetGame()" class="btn btn-primary w-full py-4 text-lg mt-4">Play Again</button>
+                </div>
+            </div>
+
+
+            <!-- SECTION 3: SENTENCE BUILDER -->
+            <section id="section-builder" class="hidden-section fade-in">
+                <div id="builder-intro" class="mb-6 text-center flex justify-between items-center">
+                     <h2 class="text-2xl font-bold" style="color:var(--primary-700)">Sentence Builder</h2>
+                     <button onclick="showBuilderReview()" class="btn btn-secondary py-2 px-4 text-sm">
+                        Finish & Review
+                     </button>
+                </div>
+
+                <!-- Builder Interface -->
+                <div id="builder-interface">
+
+                    <!-- Live Draft Canvas -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2" style="color:var(--text-muted)">Your Story So Far:</label>
+                        <div id="live-draft-canvas" class="bg-[var(--surface-alt)] p-4 rounded-[16px] min-h-[100px] text-lg" style="color:var(--text-2); white-space: pre-wrap;">
+                            <em class="text-[var(--text-muted)]">Your sentences will appear here...</em>
+                        </div>
+                    </div>
+
+                    <!-- Current Task (FLIP CARD) -->
+                    <div class="mb-6 text-center">
+                        <span class="text-[var(--primary-700)] uppercase text-xs tracking-wider font-bold mb-2 block">Use this chunk (click for help):</span>
+
+                        <div class="flip-card mx-auto max-w-md" onclick="this.classList.toggle('flipped')">
+                            <div class="flip-card-inner shadow-sm">
+                                <!-- Front -->
+                                <div class="flip-card-front flex flex-col">
+                                    <h3 id="current-chunk-en" class="text-2xl md:text-3xl font-bold">
+                                        <!-- English Chunk inserts here -->
+                                    </h3>
+                                    <span class="text-xs text-[var(--primary-300)] mt-2 flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        Click to flip for translation
+                                    </span>
+                                </div>
+                                <!-- Back -->
+                                <div class="flip-card-back flex flex-col">
+                                    <h3 id="current-chunk-hu" class="text-xl md:text-2xl font-bold">
+                                        <!-- Hungarian Chunk inserts here -->
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <textarea id="sentence-input" rows="3" class="input-field text-lg" placeholder="Type your full sentence here..."></textarea>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                         <div class="text-sm font-semibold" style="color:var(--text-muted)">
+                            Sentences written: <span id="sentences-count">0</span>
+                         </div>
+                         <button onclick="nextBuilderSentence()" class="btn btn-primary py-3 px-8 flex items-center gap-2">
+                            Add Sentence
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                              </svg>
+                         </button>
+                    </div>
+                </div>
+
+                <!-- Review Interface (Initially Hidden) -->
+                <div id="builder-review" class="hidden-section">
+                    <h3 class="text-xl font-bold mb-4" style="color:var(--primary-700)">Review Your Draft</h3>
+                    <p class="mb-4" style="color:var(--text-2)">Here is your full text. You can make final edits before downloading.</p>
+                    <textarea id="final-draft" rows="12" class="input-field mb-6 font-mono text-base" style="white-space: pre-wrap;"></textarea>
+
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <button onclick="returnToBuilder()" class="btn btn-secondary flex-1 justify-center">Keep Writing</button>
+                        <button onclick="resetBuilder()" class="btn btn-error bg-opacity-10 !text-[var(--error)] !border-[var(--error)] flex-none justify-center">Clear All</button>
+                        <button onclick="downloadDraft()" class="btn btn-accent flex-[2] justify-center py-3 text-lg gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            Download Text
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // --- DATA ---
+        const gameSentences = [
+            // Negatives
+            { text: "There aren't many twenty-four-hour shops close by.", type: "neg" },
+            { text: "The air is a problem in my neighborhood.", type: "neg" },
+            { text: "I have to say, the air quality is awful.", type: "neg" },
+            { text: "We're always breathing in all the traffic fumes.", type: "neg" },
+            { text: "My area is not so good from the point of view of noise.", type: "neg" },
+            { text: "At night, there are always people walking past, singing and shouting.", type: "neg" },
+            { text: "The noise can be a bit irritating sometimes.", type: "neg" },
+            { text: "A lot of traffic goes down the road outside our house.", type: "neg" },
+            { text: "There is always terrible rush-hour traffic.", type: "neg" },
+            { text: "Drivers here are always getting angry and stressed out.", type: "neg" },
+            { text: "My flat is very noisy because it's right by an intersection.", type: "neg" },
+            { text: "In my old flat, the house used to shake from the traffic.", type: "neg" },
+            { text: "All the people here get really stressed out and nervous.", type: "neg" },
+            { text: "Most of the streets are quite noisy and smelly.", type: "neg" },
+            { text: "There are lots of cars and pollution.", type: "neg" },
+            { text: "You often see drunk people on the streets.", type: "neg" },
+            { text: "There's not a lot of entertainment close by.", type: "neg" },
+            { text: "I really miss the fresh country air.", type: "neg" },
+            { text: "Everything just seems too crowded here.", type: "neg" },
+            { text: "Car noise is everywhere.", type: "neg" },
+            { text: "For me, the city is really too hectic for my liking.", type: "neg" },
+            // Positives
+            { text: "The district is right in the centre of town.", type: "pos" },
+            { text: "It's very convenient for schools and for work.", type: "pos" },
+            { text: "It's also really good for shopping.", type: "pos" },
+            { text: "We have a park just around the corner, which is lovely.", type: "pos" },
+            { text: "There are three cinemas within five minutes walking distance.", type: "pos" },
+            { text: "We have a good choice of films.", type: "pos" },
+            { text: "It's really nice to go to the country for a break.", type: "pos" },
+            { text: "The town is much better for work and for going out.", type: "pos" },
+            { text: "My neighborhood has a fairly friendly atmosphere.", type: "pos" },
+            { text: "It's quite pleasantly peaceful in our flat.", type: "pos" },
+            { text: "Watching the children play in the park is quite a beautiful sight.", type: "pos" },
+            { text: "There's a very beautiful big church close by.", type: "pos" },
+            { text: "There is no shortage of places nearby to find food.", type: "pos" },
+            { text: "There are some advantages of living in the city.", type: "pos" },
+            { text: "My city has lots of cultural influences.", type: "pos" },
+            { text: "The standard of musicianship is generally very high here.", type: "pos" },
+            { text: "We could take nice walks in the countryside.", type: "pos" },
+            { text: "It's like a large community where I live now.", type: "pos" },
+            { text: "We have a very good social life here.", type: "pos" }
+        ];
+
+        // Builder Chunks with Hungarian translations from the provided file
+        const builderChunks = [
+            { en: "right in the centre of town", hu: "pont a város központjában" },
+            { en: "convenient for work", hu: "kényelmes munka szempontjából" },
+            { en: "good for shopping", hu: "jó vásárláshoz" },
+            { en: "just around the corner", hu: "a közelben (sarkon túl)" },
+            { en: "right opposite us", hu: "közvetlenül velünk szemben" },
+            { en: "within five minutes walking distance", hu: "5 perc séta távolságra" },
+            { en: "a good choice of films", hu: "sok film közül választhatunk" },
+            { en: "air quality is awful", hu: "a levegő minősége szörnyű" },
+            { en: "breathing in all the traffic fumes", hu: "belélegezni a kipufogógázt" },
+            { en: "not so good from the point of view of noise", hu: "nem olyan jó a zaj tekintetében" },
+            { en: "all-night bars", hu: "éjjel-nappali kocsmák" },
+            { en: "a bit irritating", hu: "kicsit irritáló" },
+            { en: "rush-hour traffic", hu: "csúcsforgalom" },
+            { en: "very narrow street", hu: "nagyon keskeny utca" },
+            { en: "angry and stressed out", hu: "ideges és stresszes" },
+            { en: "right by an intersection", hu: "közvetlenül egy kereszteződés mellett" },
+            { en: "house used to shake", hu: "remegett a ház" },
+            { en: "in the heart of the city", hu: "a város szívében" },
+            { en: "in the depths of the countryside", hu: "mélyen vidéken" },
+            { en: "get bored", hu: "unatkozni" },
+            { en: "miss being able to go out", hu: "hiányzik a szórakozás lehetősége" },
+            { en: "take a breath of fresh air", hu: "szívni egy kis friss levegőt" },
+            { en: "relax and do nothing", hu: "pihenni és semmit sem csinálni" },
+            { en: "pace of modern life", hu: "a modern élet ritmusa" },
+            { en: "quite a poor district", hu: "elég szegény kerület" },
+            { en: "not so well-off", hu: "nem annyira jómódú" },
+            { en: "friendly atmosphere", hu: "barátságos légkör" },
+            { en: "noisy and smelly", hu: "zajos és büdös" },
+            { en: "pleasantly peaceful", hu: "kellemesen békés" },
+            { en: "drunk people on the streets", hu: "részeg emberek az utcán" },
+            { en: "beautiful sight", hu: "szép látvány" },
+            { en: "beautiful big church close by", hu: "szép nagy templom a közelben" },
+            { en: "we can't have everything", hu: "nem jöhet össze minden" },
+            { en: "shopping centre", hu: "bevásárlóközpont" },
+            { en: "no shortage of places to find food", hu: "nincs hiány élellelmiszerboltokban" },
+            { en: "not a lot of entertainment close by", hu: "nincs sok szórakozási lehetőség a közelben" },
+            { en: "take the tram into the city", hu: "villamossal bemenni a városba" },
+            { en: "miss the fresh country air", hu: "hiányzik a friss vidéki levegő" },
+            { en: "advantages of living in the city", hu: "a városi élet előnyei" },
+            { en: "lots of cultural influences", hu: "sok kulturális hatás" },
+            { en: "active music scene", hu: "aktív zenei élet" },
+            { en: "too crowded", hu: "túl zsúfolt" },
+            { en: "car noise is everywhere", hu: "mindenhol autózaj van" },
+            { en: "on the edge of the suburbs", hu: "a külváros szélén" },
+            { en: "take nice walks in the countryside", hu: "nagyokat sétálni vidéken" },
+            { en: "too hectic for my liking", hu: "túl zavaros (gyors) az én ízlésemnek" },
+            { en: "like a large community", hu: "olyan, mint egy nagy közösség" },
+            { en: "very good social life", hu: "nagyon jó társasági élet" }
+        ];
+
+        // --- GLOBAL STATE ---
+        let currentTab = 'home';
+
+        // Game State
+        let score = 0;
+        let lives = 5;
+        let currentQuestionIndex = 0;
+        let shuffledQuestions = [];
+        let timerInterval = null;
+        let timeLeft = 30;
+        let maxTime = 30;
+
+        // Builder State
+        let currentChunkIndex = 0;
+        let draftSentences = [];
+        let shuffledChunks = [];
+
+        // --- TABS ---
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            ['home', 'game', 'builder'].forEach(section => {
+                const el = document.getElementById(`section-${section}`);
+                if (section === tabId) {
+                    el.classList.remove('hidden-section');
+                } else {
+                    el.classList.add('hidden-section');
+                }
+            });
+
+            if (tabId === 'game') {
+                resetGame();
+            } else if (tabId === 'builder') {
+                if (draftSentences.length === 0 && currentChunkIndex === 0) {
+                     initBuilder();
+                }
+            }
+             if (tabId !== 'game') {
+                clearInterval(timerInterval);
+            }
+        }
+
+        // --- GAME LOGIC ---
+        function resetGame() {
+            score = 0;
+            lives = 5;
+            currentQuestionIndex = 0;
+            shuffledQuestions = [...gameSentences].sort(() => 0.5 - Math.random());
+            document.getElementById('game-over-modal').classList.add('hidden-section');
+            updateLivesDisplay();
+            updateScoreDisplay();
+            loadNextQuestion();
+        }
+
+        function updateLivesDisplay() {
+            const container = document.getElementById('lives-display');
+            container.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const heart = document.createElement('span');
+                heart.innerHTML = '❤';
+                heart.className = i < lives ? 'heart' : 'heart lost';
+                container.appendChild(heart);
+            }
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-display').innerText = score;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            const difficultyStage = Math.floor(currentQuestionIndex / 5);
+            maxTime = Math.max(5, 30 - (difficultyStage * 5));
+            timeLeft = maxTime;
+            updateTimerVisuals();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerVisuals();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleIncorrect('Time ran out!');
+                }
+            }, 1000);
+        }
+
+        function updateTimerVisuals() {
+             document.getElementById('timer-text').innerText = `${timeLeft}s`;
+             const fill = document.getElementById('timer-fill');
+             const percentage = (timeLeft / maxTime) * 100;
+             fill.style.width = `${percentage}%`;
+             fill.classList.remove('warning', 'danger');
+             if (percentage < 30) {
+                 fill.classList.add('danger');
+             } else if (percentage < 60) {
+                 fill.classList.add('warning');
+             }
+        }
+
+        function loadNextQuestion() {
+            if (lives <= 0) {
+                endGame("You ran out of lives.");
+                return;
+            }
+            if (currentQuestionIndex >= shuffledQuestions.length) {
+                endGame("You completed all the questions! Amazing!");
+                 document.getElementById('game-over-icon').innerText = '🎉';
+                 document.getElementById('game-over-modal').querySelector('h2').innerText = 'You Won!';
+                return;
+            }
+            const q = shuffledQuestions[currentQuestionIndex];
+            const card = document.getElementById('question-card');
+            card.style.opacity = 0;
+            setTimeout(() => {
+                card.innerText = q.text;
+                card.dataset.type = q.type;
+                card.style.opacity = 1;
+                startTimer();
+            }, 200);
+        }
+
+        function handleAnswer(userChoice) {
+            clearInterval(timerInterval);
+            const card = document.getElementById('question-card');
+            const correctType = card.dataset.type;
+            if (userChoice === correctType) {
+                score++;
+                updateScoreDisplay();
+                card.style.backgroundColor = 'rgba(47, 158, 68, 0.1)';
+                setTimeout(() => {
+                     card.style.backgroundColor = '';
+                     currentQuestionIndex++;
+                     loadNextQuestion();
+                }, 300);
+            } else {
+                handleIncorrect('Wrong answer!');
+            }
+        }
+
+        function handleIncorrect(reason) {
+            lives--;
+            updateLivesDisplay();
+            score--;
+            updateScoreDisplay();
+             const card = document.getElementById('question-card');
+             card.style.backgroundColor = 'rgba(217, 45, 32, 0.1)';
+             setTimeout(() => {
+                card.style.backgroundColor = '';
+                if (lives <= 0) {
+                    endGame(reason);
+                } else {
+                    currentQuestionIndex++;
+                    loadNextQuestion();
+                }
+             }, 500);
+        }
+
+        function endGame(reason) {
+            clearInterval(timerInterval);
+            document.getElementById('final-score').innerText = score;
+            // Reason is intentionally not shown to keep it positive, but logged if needed for future dev
+            console.log("Game Over Reason:", reason);
+
+            if (lives <= 0) {
+                 document.getElementById('game-over-icon').innerText = '😢';
+                 document.getElementById('game-over-modal').querySelector('h2').innerText = 'Game Over!';
+            }
+            document.getElementById('game-over-modal').classList.remove('hidden-section');
+        }
+
+        // --- BUILDER LOGIC ---
+        function initBuilder() {
+            currentChunkIndex = 0;
+            draftSentences = [];
+            shuffledChunks = [...builderChunks].sort(() => 0.5 - Math.random()); // Shuffle
+            document.getElementById('builder-interface').classList.remove('hidden-section');
+            document.getElementById('builder-review').classList.add('hidden-section');
+            updateBuilderUI();
+        }
+
+        function updateBuilderUI() {
+            const canvas = document.getElementById('live-draft-canvas');
+            if (draftSentences.length === 0) {
+                 canvas.innerHTML = '<em class="text-[var(--text-muted)]">Your sentences will appear here...</em>';
+            } else {
+                 canvas.innerText = draftSentences.join(' ');
+                 canvas.scrollTop = canvas.scrollHeight;
+            }
+
+            document.getElementById('sentences-count').innerText = draftSentences.length;
+
+             if (currentChunkIndex < shuffledChunks.length) {
+                // Reset flip card state
+                document.querySelector('.flip-card').classList.remove('flipped');
+                // Update card content
+                document.getElementById('current-chunk-en').innerText = shuffledChunks[currentChunkIndex].en;
+                document.getElementById('current-chunk-hu').innerText = shuffledChunks[currentChunkIndex].hu;
+                document.getElementById('sentence-input').value = '';
+                document.getElementById('sentence-input').focus();
+             } else {
+                 alert("Wow! You've used all available chunks. Let's review your text.");
+                 showBuilderReview();
+             }
+        }
+
+        function nextBuilderSentence() {
+            const input = document.getElementById('sentence-input');
+            const sentence = input.value.trim();
+
+            if (sentence.length < 5) {
+                input.style.borderColor = 'var(--error)';
+                setTimeout(() => input.style.borderColor = '', 1000);
+                return;
+            }
+
+            draftSentences.push(sentence);
+            currentChunkIndex++;
+            updateBuilderUI();
+        }
+
+        function showBuilderReview() {
+            document.getElementById('builder-interface').classList.add('hidden-section');
+            document.getElementById('builder-review').classList.remove('hidden-section');
+            document.getElementById('builder-intro').classList.add('hidden-section');
+            document.getElementById('final-draft').value = draftSentences.join(' ');
+        }
+
+        function returnToBuilder() {
+             document.getElementById('builder-interface').classList.remove('hidden-section');
+             document.getElementById('builder-review').classList.add('hidden-section');
+             document.getElementById('builder-intro').classList.remove('hidden-section');
+        }
+
+        function resetBuilder() {
+            if (confirm("Are you sure you want to delete everything and start over?")) {
+                initBuilder();
+                document.getElementById('builder-intro').classList.remove('hidden-section');
+            }
+        }
+
+        function downloadDraft() {
+            const text = document.getElementById('final-draft').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'my_neighborhood_draft.txt';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+    </script>
+</body>
+</html>
