@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neighborhood Explorer</title>
-    <!-- Load Google Fonts: Inter and Nunito as requested in brief -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind for layout utilities only. Custom theming applied via CSS variables below. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -233,10 +231,8 @@
 </head>
 <body class="min-h-screen p-4 md:p-8">
 
-    <!-- Main Container -->
     <div class="max-w-4xl mx-auto">
 
-        <!-- Header & Navigation -->
         <header class="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-2xl md:text-3xl font-bold" style="color: var(--primary-700)">Neighborhood Explorer</h1>
             <nav class="flex bg-white p-1 rounded-full shadow-sm border border-[var(--border)]">
@@ -246,10 +242,8 @@
             </nav>
         </header>
 
-        <!-- SECTIONS -->
         <main class="card p-6 md:p-10 min-h-[400px]">
 
-            <!-- SECTION 1: HOME / LANDING -->
             <section id="section-home" class="fade-in flex flex-col items-center justify-center text-center h-full space-y-8 py-8">
                 <div class="w-32 h-32 bg-[var(--primary-300)] rounded-full flex items-center justify-center mb-4">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-[var(--primary-700)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -274,22 +268,18 @@
                 </div>
             </section>
 
-            <!-- SECTION 2: QUIZ GAME -->
             <section id="section-game" class="hidden-section fade-in">
-                <!-- Game Info Bar -->
                 <div class="flex justify-between items-center mb-6 bg-[var(--surface-alt)] p-4 rounded-[16px]">
                     <div class="flex items-center gap-2">
                         <span class="text-[var(--text-muted)] font-semibold">Lives:</span>
                         <div id="lives-display" class="flex text-2xl">
-                            <!-- Hearts injected by JS -->
-                        </div>
+                            </div>
                     </div>
                     <div class="text-xl font-bold" style="color:var(--primary-700)">
                         Score: <span id="score-display">0</span>
                     </div>
                 </div>
 
-                <!-- Timer -->
                 <div class="mb-8">
                     <div class="flex justify-between text-sm font-semibold mb-2" style="color:var(--text-muted)">
                         <span>Time Left</span>
@@ -300,14 +290,11 @@
                     </div>
                 </div>
 
-                <!-- Question Card -->
                 <div class="flex flex-col items-center justify-center space-y-8 py-8">
                     <div id="question-card" class="text-center text-xl md:text-3xl font-medium p-8 w-full min-h-[150px] flex items-center justify-center transition-all" style="color:var(--text)">
-                        <!-- Question inserted here -->
                         Loading...
                     </div>
 
-                    <!-- Answer Buttons -->
                     <div class="flex w-full max-w-md gap-6" id="game-buttons">
                         <button onclick="handleAnswer('neg')" class="btn btn-error flex-1 py-6 text-xl shadow-md hover:shadow-lg transition-all">
                             👎 Negative
@@ -319,20 +306,17 @@
                 </div>
             </section>
 
-             <!-- Game Over Modal (Inline) -->
              <div id="game-over-modal" class="hidden-section fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div class="card max-w-md w-full p-8 text-center space-y-6 animate-bounce-in">
                     <div id="game-over-icon" class="text-6xl">😢</div>
                     <h2 class="text-3xl font-bold" style="color:var(--primary-700)">Game Over!</h2>
                     <p class="text-xl" style="color:var(--text-2)">Final Score: <span id="final-score" class="font-bold">0</span></p>
-                    <p id="game-over-reason" class="text-[var(--text-muted)] hidden"></p> <!-- Reason hidden by default now -->
-                    <p class="text-lg font-semibold" style="color:var(--accent-500)">Don't give up! You can do it! Try again!</p>
+                    <p id="game-over-reason" class="text-[var(--text-muted)] hidden"></p> <p class="text-lg font-semibold" style="color:var(--accent-500)">Don't give up! You can do it! Try again!</p>
                     <button onclick="resetGame()" class="btn btn-primary w-full py-4 text-lg mt-4">Play Again</button>
                 </div>
             </div>
 
 
-            <!-- SECTION 3: SENTENCE BUILDER -->
             <section id="section-builder" class="hidden-section fade-in">
                 <div id="builder-intro" class="mb-6 text-center flex justify-between items-center">
                      <h2 class="text-2xl font-bold" style="color:var(--primary-700)">Sentence Builder</h2>
@@ -341,10 +325,8 @@
                      </button>
                 </div>
 
-                <!-- Builder Interface -->
                 <div id="builder-interface">
 
-                    <!-- Live Draft Canvas -->
                     <div class="mb-6">
                         <label class="block text-sm font-semibold mb-2" style="color:var(--text-muted)">Your Story So Far:</label>
                         <div id="live-draft-canvas" class="bg-[var(--surface-alt)] p-4 rounded-[16px] min-h-[100px] text-lg" style="color:var(--text-2); white-space: pre-wrap;">
@@ -352,17 +334,14 @@
                         </div>
                     </div>
 
-                    <!-- Current Task (FLIP CARD) -->
                     <div class="mb-6 text-center">
                         <span class="text-[var(--primary-700)] uppercase text-xs tracking-wider font-bold mb-2 block">Use this chunk (click for help):</span>
 
                         <div class="flip-card mx-auto max-w-md" onclick="this.classList.toggle('flipped')">
                             <div class="flip-card-inner shadow-sm">
-                                <!-- Front -->
                                 <div class="flip-card-front flex flex-col">
                                     <h3 id="current-chunk-en" class="text-2xl md:text-3xl font-bold">
-                                        <!-- English Chunk inserts here -->
-                                    </h3>
+                                        </h3>
                                     <span class="text-xs text-[var(--primary-300)] mt-2 flex items-center gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -370,11 +349,9 @@
                                         Click to flip for translation
                                     </span>
                                 </div>
-                                <!-- Back -->
                                 <div class="flip-card-back flex flex-col">
                                     <h3 id="current-chunk-hu" class="text-xl md:text-2xl font-bold">
-                                        <!-- Hungarian Chunk inserts here -->
-                                    </h3>
+                                        </h3>
                                 </div>
                             </div>
                         </div>
@@ -388,16 +365,20 @@
                          <div class="text-sm font-semibold" style="color:var(--text-muted)">
                             Sentences written: <span id="sentences-count">0</span>
                          </div>
-                         <button onclick="nextBuilderSentence()" class="btn btn-primary py-3 px-8 flex items-center gap-2">
-                            Add Sentence
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                              </svg>
-                         </button>
-                    </div>
+                         <div class="flex items-center gap-4">
+                            <button onclick="skipBuilderChunk()" class="btn btn-secondary py-3 px-6">
+                                Skip Chunk
+                            </button>
+                            <button onclick="nextBuilderSentence()" class="btn btn-primary py-3 px-8 flex items-center gap-2">
+                                Add Sentence
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                  </svg>
+                            </button>
+                         </div>
+                         </div>
                 </div>
 
-                <!-- Review Interface (Initially Hidden) -->
                 <div id="builder-review" class="hidden-section">
                     <h3 class="text-xl font-bold mb-4" style="color:var(--primary-700)">Review Your Draft</h3>
                     <p class="mb-4" style="color:var(--text-2)">Here is your full text. You can make final edits before downloading.</p>
@@ -419,7 +400,6 @@
         </main>
     </div>
 
-    <!-- JAVASCRIPT -->
     <script>
         // --- DATA ---
         const gameSentences = [
@@ -738,6 +718,13 @@
             currentChunkIndex++;
             updateBuilderUI();
         }
+
+        // --- NEW FUNCTION ADDED ---
+        function skipBuilderChunk() {
+            currentChunkIndex++;
+            updateBuilderUI();
+        }
+        // --- END OF NEW FUNCTION ---
 
         function showBuilderReview() {
             document.getElementById('builder-interface').classList.add('hidden-section');
